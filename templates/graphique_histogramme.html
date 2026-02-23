@@ -1,0 +1,57 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Prévisions Météo Paris - Histogramme</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load("current", {packages:["corechart"]});
+      google.charts.setOnLoadCallback(drawChart);
+
+      async function drawChart() {
+        try {
+          // 1. Récupération des données réelles de Paris (7 prochains jours)
+          const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=48.8534&longitude=2.3488&hourly=temperature_2m");
+          const json = await response.json();
+          
+          // 2. Préparation des données pour l'histogramme
+          // On transforme la liste des températures en format compatible [ ['Label', 'Valeur'], [Date, Temp], ... ]
+          var dataArray = [['Heure', 'Température']];
+          json.hourly.temperature_2m.forEach((temp, index) => {
+            // L'histogramme va ignorer le label 'Heure' pour se concentrer sur la distribution de 'Température'
+            dataArray.push(['H' + index, temp]);
+          });
+
+          var data = google.visualization.arrayToDataTable(dataArray);
+
+          // 3. Configuration de l'histogramme
+          var options = {
+            title: 'Distribution des températures prévues à Paris (7 prochains jours)',
+            legend: { position: 'none' },
+            colors: ['#4285F4'],
+            hAxis: { 
+              title: 'Température (°C)' 
+            },
+            vAxis: { 
+              title: 'Fréquence (Nombre d\'heures)' 
+            },
+            histogram: {
+              bucketSize: 1, // Regroupe par tranches de 1 degré
+              hideBucketItems: true
+            }
+          };
+
+          // 4. Dessin du graphique
+          var chart = new google.visualization.Histogram(document.getElementById('chart_div'));
+          chart.draw(data, options);
+
+        } catch (error) {
+          console.error("Erreur lors de la récupération des données :", error);
+          document.getElementById('chart_div').innerHTML = "Impossible de charger les données météo.";
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_div" style="width: 100%; height: 500px;"></div>
+  </body>
+</html>
